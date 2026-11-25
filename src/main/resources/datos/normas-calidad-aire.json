@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "ncaa": { "nombre": "Norma de Calidad del Aire Ambiente — Acuerdo Ministerial 097-A, Anexo 4, Libro VI TULSMA", "publicacion": "Registro Oficial, Edición Especial N.º 387, 4 de noviembre de 2015", "url": "https://faolex.fao.org/docs/pdf/ecu155133.pdf", "secciones": "4.1.2 (límites) y 4.1.3 Tabla 1 (alerta, alarma, emergencia)" },
+    "oms": { "nombre": "OMS — Directrices mundiales sobre la calidad del aire (2021)", "url": "https://www.who.int/publications/i/item/9789240034228" },
+    "nota": "Valores en µg/m³ (CO: µg/m³; la REMMAQ lo publica en mg/m³). La NCAA se refiere a 25 °C y 760 mm Hg; Quito está a ~2 800 m, la corrección de 4.1.2.3 no se aplica en esta app."
+  },
+  "contaminantes": {
+    "pm2_5": { "label": "PM2.5", "promedioHoras": 24, "ncaa": { "24h": 50, "anual": 15 }, "oms": { "24h": 15, "anual": 5 }, "alerta": 150, "alarma": 250, "emergencia": 350 },
+    "pm10":  { "label": "PM10",  "promedioHoras": 24, "ncaa": { "24h": 100, "anual": 50 }, "oms": { "24h": 45, "anual": 15 }, "alerta": 250, "alarma": 400, "emergencia": 500 },
+    "no2":   { "label": "NO₂",   "promedioHoras": 1,  "ncaa": { "1h": 200, "anual": 40 }, "oms": { "24h": 25, "anual": 10 }, "alerta": 1000, "alarma": 2000, "emergencia": 3000 },
+    "o3":    { "label": "O₃",    "promedioHoras": 8,  "ncaa": { "8h": 100 }, "oms": { "8h": 100, "temporada": 60 }, "alerta": 200, "alarma": 400, "emergencia": 600 },
+    "so2":   { "label": "SO₂",   "promedioHoras": 24, "ncaa": { "24h": 125, "anual": 60, "10min": 500 }, "oms": { "24h": 40 }, "alerta": 200, "alarma": 1000, "emergencia": 1800 },
+    "co":    { "label": "CO",    "promedioHoras": 8,  "ncaa": { "8h": 10000, "1h": 30000 }, "oms": { "24h": 4000 }, "alerta": 15000, "alarma": 30000, "emergencia": 40000 }
+  }
+}

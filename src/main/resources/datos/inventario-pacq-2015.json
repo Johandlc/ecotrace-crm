@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "nombre": "Inventario de Gases de Efecto Invernadero del DMQ — año base 2015",
+    "documento": "Plan de Acción Climática de Quito 2020-2050 (PACQ 2020), Secretaría de Ambiente del DMQ, pp. 38-39, figuras 10 y 11",
+    "url": "https://www.fondoambientalquito.gob.ec/wp-content/uploads/2022/10/Quito_CAP_2020.pdf",
+    "metodo": "GPC Básico+ con la herramienta CIRIS (C40)",
+    "nota": "Los porcentajes por subsector son los publicados (redondeados). Las toneladas por sector son el total publicado multiplicado por el porcentaje."
+  },
+  "total": 7611216,
+  "anio": 2015,
+  "sectores": [
+    { "id": "transporte", "label": "Transporte", "pct": 40 },
+    { "id": "energia", "label": "Energía estacionaria (residencial, comercial, institucional, industrial)", "pct": 26 },
+    { "id": "afolu", "label": "AFOLU (agricultura, silvicultura y cambio de uso del suelo)", "pct": 24 },
+    { "id": "residuos", "label": "Residuos", "pct": 10 }
+  ],
+  "subsectores": [
+    { "label": "Transporte por carretera", "pct": 39 },
+    { "label": "Cambio de uso del suelo", "pct": 24 },
+    { "label": "Energía residencial", "pct": 12 },
+    { "label": "Relleno sanitario", "pct": 10 },
+    { "label": "Manufactura y construcción", "pct": 8 },
+    { "label": "Comercial e institucional", "pct": 6 },
+    { "label": "Fuentes agregadas", "pct": 4 },
+    { "label": "Ganadería", "pct": 3 },
+    { "label": "Otros (fugitivas, maquinaria, industria energética, incineración, aviación, agro) — < 1 % c/u", "pct": 1 }
+  ],
+  "proyeccion": "Sin medidas de mitigación, +52 % de emisiones entre 2015 y 2050 (PACQ 2020, p. 13)."
+}
