@@ -27,3 +27,13 @@ export function idw([lat, lon], estaciones, valores, maxDist = 0.12) {
   }
   return dmin > maxDist || !den ? null : num / den
 }
+
+/** Distancia en km entre dos puntos (fórmula de haversine). */
+export function distanciaKm(lat1, lon1, lat2, lon2) {
+  const R = 6371, rad = Math.PI / 180
+  const a = Math.sin(((lat2 - lat1) * rad) / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(((lon2 - lon1) * rad) / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(a))
+}
+
+/** Normaliza texto para buscar sin tildes ni mayúsculas ("Guápulo" ≈ "guapulo"). */
+export const normalizar = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()

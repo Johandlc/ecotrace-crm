@@ -66,3 +66,12 @@ body { background: var(--color-paper); color: var(--color-ink); -webkit-font-smo
 input[type=range].scrub { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px; background: transparent; }
 input[type=range].scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 999px; background: #1f1f1d; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,.3); cursor: pointer; }
 input[type=range].scrub::-moz-range-thumb { width: 14px; height: 14px; border-radius: 999px; background: #1f1f1d; border: 3px solid #fff; }
+
+/* Pin del lugar buscado: cae con rebote y emite ondas */
+.pin-lugar { position: relative; width: 34px; height: 44px; animation: pin-cae .55s cubic-bezier(.34,1.56,.64,1) both; }
+.pin-cabeza { position: absolute; left: 5px; top: 0; width: 24px; height: 24px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: #1f1f1d; border: 3px solid #fff; box-shadow: 0 6px 14px -4px rgba(0,0,0,.5); }
+.pin-cabeza::after { content: ''; position: absolute; inset: 6px; border-radius: 999px; background: #fff; }
+.pin-onda { position: absolute; left: 7px; bottom: 0; width: 20px; height: 8px; border-radius: 50%; background: rgba(31,31,29,.35); animation: pin-onda 1.8s ease-out infinite .5s; }
+@keyframes pin-cae { from { transform: translateY(-40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes pin-onda { 0% { transform: scale(.6); opacity: .7; } 100% { transform: scale(2.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pin-lugar, .pin-onda { animation: none; } }

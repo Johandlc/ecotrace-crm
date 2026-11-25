@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { MapContainer, TileLayer, GeoJSON, Marker, Polyline, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Wind, Factory, Map as MapIcon, Play, Pause, X, Maximize2, Minimize2, Gauge, Clock, TriangleAlert, ExternalLink, MapPin, Route } from 'lucide-react'
+import { Wind, Factory, Map as MapIcon, Play, Pause, X, Maximize2, Minimize2, Gauge, Radio, Clock, TriangleAlert, ExternalLink, MapPin, Route } from 'lucide-react'
 import { Area, AreaChart, ReferenceLine, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from 'recharts'
 import parroquias from '../data/quito-parroquias.json'
 import vias from '../data/quito-vias.json'
@@ -12,8 +12,9 @@ import { useStore } from '../store'
 import { AnimatedNumber, Badge, PageHeader, spring } from '../components/ui'
 import { FuenteBtn } from '../components/Fuentes'
 import EstadisticasQuito from '../components/EstadisticasQuito'
+import BuscadorLugares from '../components/BuscadorLugares'
 import { AQ_LEVELS, PARAMS, aqLevel, fmt, fmtHour, fmtT } from '../lib/params'
-import { CENTROIDES, idw } from '../lib/geo'
+import { CENTROIDES, distanciaKm, idw } from '../lib/geo'
 
 const ZONE_COLORS = { 'Z-CHO': '#8fbf8a', 'Z-DEL': '#9db4d6', 'Z-NOR': '#c9b37a', 'Z-CAL': '#e0a189', 'Z-CEN': '#d69aa8', 'Z-SUR': '#b9a3d6', 'Z-QTB': '#e8c46b', 'Z-TUM': '#8fc1c9', 'Z-CHI': '#a7c58a' }
 const POLS = ['pm2_5', 'pm10', 'no2', 'o3', 'so2', 'co']
@@ -30,7 +31,7 @@ function FlyTo({ target }) {
     if (!target) map.flyTo([-0.2, -78.47], 11, { duration: 1.6 })
     else if (target.bounds) map.flyToBounds(target.bounds, { paddingTopLeft: [40, 60], paddingBottomRight: [panel + 40, 60], duration: 1.1, maxZoom: 13 })
     else {
-      const z = Math.max(map.getZoom(), 13)
+      const z = target.zoom ?? Math.max(map.getZoom(), 13)
       map.flyTo(map.unproject(map.project(target.center, z).add([panel / 2, 0]), z), z, { duration: 1 })
     }
   }, [target, map])
@@ -145,6 +146,13 @@ export default function MapaQuito({ query }) {
       const feats = parroquias.features.filter((f) => f.properties.zonaId === sel.id)
       return feats.length ? { bounds: L.geoJSON({ type: 'FeatureCollection', features: feats }).getBounds() } : null
     }
+    if (sel.type === 'lugar') {
+      if (sel.lugar.tipo === 'parroquia') {
+        const f = parroquias.features.find((x) => x.properties.parroquia === sel.lugar.parroquia)
+        if (f) return { bounds: L.geoJSON(f).getBounds() }
+      }
+      return { center: [sel.lugar.lat, sel.lugar.lon], zoom: 15 }
+    }
     const p = sel.type === 'station' ? estaciones.find((s) => s.id === sel.id) : d.sources.find((s) => s.id === sel.id)
     return p ? { center: [p.lat, p.lon] } : null
   }, [sel, d, estaciones])
@@ -192,6 +200,10 @@ export default function MapaQuito({ query }) {
                 <Tooltip direction="top" offset={[0, -12]} className="eco-tip"><b>{f.name}</b><br />{f.co2e != null ? `${fmtT(f.co2e)} CO₂e/año (${f.year})` : 'Sin dato público de emisiones'}</Tooltip>
               </Marker>
             ))}
+            {sel?.type === 'lugar' && (
+              <Marker key={`lugar-${sel.lugar.nombre}`} position={[sel.lugar.lat, sel.lugar.lon]} zIndexOffset={1000}
+                icon={L.divIcon({ className: '', iconSize: [34, 44], iconAnchor: [17, 42], html: '<div class="pin-lugar"><span class="pin-onda"></span><span class="pin-cabeza"></span></div>' })} />
+            )}
             <FlyTo target={target} />
           </MapContainer>
         ) : (
@@ -205,8 +217,9 @@ export default function MapaQuito({ query }) {
 
         {d && (
           <>
-            {/* Controles de capa */}
-            <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0, transition: { delay: 0.3 } }} className="glass absolute top-3 left-3 z-[500] max-w-[calc(100%-24px)] rounded-2xl border border-white/60 p-1.5 shadow-lg">
+            {/* Controles de capa + buscador de barrios */}
+            <div className="absolute top-3 left-3 z-[550] flex w-[min(380px,calc(100%-24px))] flex-col gap-2">
+            <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0, transition: { delay: 0.3 } }} className="glass self-start max-w-full rounded-2xl border border-white/60 p-1.5 shadow-lg">
               <div className="flex gap-1">
                 {[['aire', 'Aire', Wind], ['emisiones', 'Emisiones', Factory], ['zonas', 'Zonas', MapIcon]].map(([k, l, I]) => (
                   <button key={k} onClick={() => { setCapa(k); setSel(null) }} className={`relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium ${capa === k ? 'text-white' : 'text-muted hover:text-ink'}`}>
@@ -233,6 +246,14 @@ export default function MapaQuito({ query }) {
                 )}
               </AnimatePresence>
             </motion.div>
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.45 } }}>
+              <BuscadorLugares zonas={d.zones} estaciones={estaciones} onElegir={(it) => {
+                if (it.tipo === 'zona') setSel({ type: 'zone', id: it.zonaId })
+                else if (it.tipo === 'estacion') { setCapa('aire'); setSel({ type: 'station', id: it.id }) }
+                else setSel({ type: 'lugar', id: `${it.tipo}-${it.nombre}`, lugar: it })
+              }} />
+            </motion.div>
+            </div>
 
             {/* KPIs */}
             <div className="pointer-events-none absolute top-3 right-3 z-[500] hidden w-60 flex-col gap-2 md:flex">
@@ -256,7 +277,7 @@ export default function MapaQuito({ query }) {
             {/* Tarjeta de hover */}
             <AnimatePresence>
               {hover && !sel && (
-                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="glass pointer-events-none absolute top-[118px] left-3 z-[500] rounded-xl border border-white/60 px-3 py-2 text-sm shadow-lg">
+                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="glass pointer-events-none absolute top-3 left-1/2 z-[500] hidden -translate-x-1/2 rounded-xl border border-white/60 px-3 py-2 text-sm shadow-lg xl:block">
                   <p className="font-semibold">{hover.parroquia}</p>
                   <p className="text-xs text-muted">{hover.zona} · parroquia {hover.tipo}</p>
                   {capa === 'aire' && <p className="mt-1 text-xs">{hoverVal == null ? 'Fuera de la cobertura de la red' : <>≈ <b>{fmt(hoverVal, 1)}</b> {unidadRemmaq(pol)} {PARAMS[pol].label} <span className="text-muted">(interpolado)</span></>}</p>}
@@ -279,7 +300,7 @@ export default function MapaQuito({ query }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="truncate text-sm font-semibold capitalize">{fmtHour(ts)}</p>
-                      <span className="flex items-center gap-1 text-[11px] text-muted">14 días · REMMAQ <FuenteBtn ids={['remmaq']} /></span>
+                      <span className="flex items-center gap-1 text-[11px] text-muted">{Math.round(d.remmaq.hourly.n / 24)} días · REMMAQ <FuenteBtn ids={['remmaq']} /></span>
                     </div>
                     <div className="relative mt-1 h-8">
                       <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none" viewBox={`0 0 ${promedioCiudad.length} 100`}>
@@ -333,7 +354,58 @@ function Fila({ label, value, unit, color }) {
 function Detalle({ sel, d, pol, t, valores, onClose, onSel }) {
   const { remmaq } = d
   let body = null
-  if (sel.type === 'station') {
+  if (sel.type === 'lugar') {
+    const L0 = sel.lugar
+    const zona = d.zones.find((z) => z.id === L0.zonaId)
+    const ts = remmaq.hourly.start + t * remmaq.hourly.step
+    // Valor interpolado de cada contaminante en el punto del barrio, para la hora del time-lapse.
+    const aire = POLS.map((k) => {
+      const vals = Object.fromEntries(remmaq.stations.map((s) => [s.id, remmaq.hourly.series[k]?.[s.id]?.[t] ?? null]))
+      return { k, v: idw([L0.lat, L0.lon], remmaq.stations, vals) }
+    })
+    const principal = aire.find((x) => x.k === pol)
+    const nivelP = nivel(pol, principal?.v)
+    const cercanas = remmaq.stations.map((s) => ({ ...s, km: distanciaKm(L0.lat, L0.lon, s.lat, s.lon) })).sort((x, y) => x.km - y.km).slice(0, 2)
+    const fuentes = d.sources.map((f) => ({ ...f, km: distanciaKm(L0.lat, L0.lon, f.lat, f.lon) })).filter((f) => f.km <= 15).sort((x, y) => x.km - y.km).slice(0, 4)
+    body = (
+      <>
+        <Badge tone="ext"><MapPin className="size-3" />{L0.tipo === 'parroquia' ? 'Parroquia' : L0.tipo.charAt(0).toUpperCase() + L0.tipo.slice(1)}</Badge>
+        <h3 className="mt-2 text-xl leading-snug font-semibold">{L0.nombre}</h3>
+        <p className="text-xs text-muted">{L0.tipo !== 'parroquia' && `${L0.parroquia} · `}{zona?.name}</p>
+
+        <div className="mt-4 overflow-hidden rounded-2xl text-white" style={{ background: colorNivel(nivelP) }}>
+          <div className="p-4">
+            <p className="text-[11px] font-medium tracking-wide uppercase opacity-80">{PARAMS[pol].label} estimado aquí</p>
+            <p className="mt-1 text-3xl font-semibold">{principal?.v == null ? 'Sin cobertura' : <><AnimatedNumber value={principal.v} decimals={1} /> <span className="text-sm font-normal opacity-80">{unidadRemmaq(pol)}</span></>}</p>
+            <p className="text-sm opacity-90">{nivelP == null ? 'Ninguna estación a menos de 13 km' : `${AQ_LEVELS[nivelP].label} · ${AQ_LEVELS[nivelP].hint}`}</p>
+          </div>
+          <p className="bg-black/15 px-4 py-1.5 text-[11px]"><span className="capitalize">{fmtHour(ts)}</span> · interpolado desde la REMMAQ</p>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between"><p className="text-xs font-semibold tracking-wide text-muted uppercase">Otros contaminantes</p><FuenteBtn ids={['remmaq', 'oms', 'ncaa']} contexto="Interpolación por distancia inversa (IDW) desde las estaciones con dato en esa hora; no es una medición en el barrio." /></div>
+        {aire.filter((x) => x.k !== pol).map((x) => <Fila key={x.k} label={PARAMS[x.k].label} value={x.v == null ? 's/d' : fmt(x.v, 2)} unit={x.v == null ? null : unidadRemmaq(x.k)} color={colorNivel(nivel(x.k, x.v))} />)}
+
+        <p className="mt-4 mb-1 text-xs font-semibold tracking-wide text-muted uppercase">Estaciones más cercanas</p>
+        {cercanas.map((s) => (
+          <button key={s.id} onClick={() => onSel({ type: 'station', id: s.id })} className="flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-sm hover:bg-white">
+            <span className="flex items-center gap-2"><Radio className="size-3.5 text-muted" />{s.name}</span><span className="text-muted tabular-nums">{fmt(s.km, 1)} km</span>
+          </button>
+        ))}
+
+        <div className="mt-4 mb-1 flex items-center justify-between"><p className="text-xs font-semibold tracking-wide text-muted uppercase">Fuentes de emisión a menos de 15 km</p><FuenteBtn ids={['climatetrace', 'osm']} /></div>
+        {fuentes.length ? fuentes.map((f) => (
+          <button key={f.id} onClick={() => onSel({ type: 'source', id: f.id })} className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-sm hover:bg-white">
+            <span className="size-2.5 shrink-0 rounded-full" style={{ background: SECTORES[f.sector]?.color }} />
+            <span className="min-w-0 flex-1 truncate">{f.name}</span>
+            <span className="shrink-0 text-xs text-muted tabular-nums">{fmt(f.km, 1)} km{f.co2e != null ? ` · ${fmtT(f.co2e)}` : ''}</span>
+          </button>
+        )) : <p className="text-sm text-muted">Ninguna fuente registrada cerca.</p>}
+
+        {zona && <button onClick={() => onSel({ type: 'zone', id: zona.id })} className="mt-4 w-full rounded-xl border border-line bg-white py-2 text-sm font-medium hover:bg-stone-50">Ver la zona {zona.name}</button>}
+        {L0.osm && <a href={`https://www.openstreetmap.org/${{ n: 'node', w: 'way', r: 'relation' }[L0.osm[0]]}/${L0.osm.slice(1)}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs text-int-700 hover:underline">Ver en OpenStreetMap<ExternalLink className="size-3" /></a>}
+      </>
+    )
+  } else if (sel.type === 'station') {
     const s = remmaq.stations.find((x) => x.id === sel.id)
     const serie = remmaq.hourly.series[pol]?.[sel.id] || []
     const chart = serie.map((v, i) => ({ ts: remmaq.hourly.start + i * remmaq.hourly.step, v }))
@@ -353,7 +425,7 @@ function Detalle({ sel, d, pol, t, valores, onClose, onSel }) {
           const v = remmaq.hourly.series[k]?.[sel.id]?.[t]
           return <Fila key={k} label={PARAMS[k].label} value={v == null ? 'sin dato' : fmt(v, 2)} unit={v == null ? null : unidadRemmaq(k)} color={colorNivel(nivel(k, v))} />
         })}
-        <div className="mt-4 flex items-center justify-between"><p className="text-xs font-semibold tracking-wide text-muted uppercase">{p.label} · 14 días</p><FuenteBtn ids={['remmaq', 'oms']} /></div>
+        <div className="mt-4 flex items-center justify-between"><p className="text-xs font-semibold tracking-wide text-muted uppercase">{p.label} · {Math.round(remmaq.hourly.n / 24)} días</p><FuenteBtn ids={['remmaq', 'oms']} /></div>
         <div className="mt-1 h-36">
           <ResponsiveContainer>
             <AreaChart data={chart} margin={{ left: -24, right: 4, top: 6 }}>

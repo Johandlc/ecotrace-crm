@@ -34,7 +34,7 @@ class TerritorioControllerTest {
         mvc.perform(get("/api/v1/territorio/datos/remmaq"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.stations.length()").value(9))
-                .andExpect(jsonPath("$.data.hourly.n").value(336));
+                .andExpect(jsonPath("$.data.hourly.n").value(744));
         mvc.perform(get("/api/v1/territorio/datos/inventario-pacq-2015")).andExpect(jsonPath("$.data.total").value(7611216));
         mvc.perform(get("/api/v1/territorio/datos/normas-calidad-aire")).andExpect(jsonPath("$.data.contaminantes.pm2_5.ncaa['24h']").value(50));
         mvc.perform(get("/api/v1/territorio/datos/no-existe")).andExpect(status().isNotFound());

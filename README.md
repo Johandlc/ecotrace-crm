@@ -105,6 +105,7 @@ El frontend (React 19 + Motion + Tailwind + Leaflet) separa **vistas** (`pages/`
 | `node scripts/procesar-remmaq.mjs <carpeta-xlsx>` | REMMAQ oficial (descargar los `.rar` de http://datosambiente.quito.gob.ec/ y extraer los `.xlsx`) | `src/main/resources/datos/remmaq.json` |
 | `node scripts/descargar-climatetrace.mjs` | Climate TRACE API v6 (sin clave) | `src/main/resources/datos/climatetrace-quito.json` |
 | `node scripts/descargar-vias-osm.mjs` | OpenStreetMap / Overpass | `frontend/src/data/quito-vias.json` |
+| `node scripts/descargar-barrios-osm.mjs` | OpenStreetMap / Overpass (839 barrios, sectores y poblados) | `frontend/src/data/quito-barrios.json` (buscador del mapa) |
 | `node scripts/generar-seed.mjs` | `quito.js` + parroquias + Climate TRACE | `db/migration/V2__datos_base_quito.sql` |
 
 `frontend` necesita `npm install` antes de `procesar-remmaq.mjs` (usa SheetJS). Los datasets se sirven en `GET /api/territorio/datos/{remmaq|climatetrace-quito|inventario-pacq-2015|normas-calidad-aire|fuentes-informacion}`.
@@ -115,13 +116,13 @@ El catálogo completo (qué aporta, dónde se usa, limitaciones) está en `src/m
 
 | Fuente | Tipo | Uso |
 |---|---|---|
-| [REMMAQ — Secretaría de Ambiente del DMQ](http://datosambiente.quito.gob.ec/) | **Oficial, medido** (2004 – 30 sep 2026) | Capa Aire del mapa, time-lapse de 14 días, tendencias, días sobre norma, lecturas de Monitoreo y alertas |
+| [REMMAQ — Secretaría de Ambiente del DMQ](http://datosambiente.quito.gob.ec/) | **Oficial, medido** (2004 – 31 oct 2026) | Capa Aire del mapa, time-lapse de octubre 2026 (31 días, hora a hora), tendencias, días sobre norma, lecturas de Monitoreo y alertas |
 | [Maldonado (2024), EPN — Tabla 2.1.1](https://bibdigital.epn.edu.ec/bitstream/15000/25693/1/CD%2014247.pdf) | Referencia | Coordenadas de 8 estaciones (San Antonio aproximada) |
 | [Climate TRACE](https://climatetrace.org/) (CC BY 4.0) | Estimación 2024 | Emisiones por instalación (aeropuerto, centrales térmicas, El Inga, aguas residuales, industria) y totales del DMQ |
 | [PACQ 2020 — Inventario GEI 2015](https://www.fondoambientalquito.gob.ec/wp-content/uploads/2022/10/Quito_CAP_2020.pdf) | Oficial | 7 611 216 t CO₂e: transporte 40 %, energía 26 %, AFOLU 24 %, residuos 10 % |
 | [NCAA — AM 097-A, Anexo 4](https://faolex.fao.org/docs/pdf/ecu155133.pdf) | Norma | Límites legales y umbrales de alerta/alarma/emergencia |
 | [OMS 2021](https://www.who.int/publications/i/item/9789240034228) | Guía de salud | Comparación de salud |
-| [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL) | Real | Parroquias, ubicaciones de fuentes, corredores viales, mapa base |
+| [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL) | Real | Parroquias, barrios del buscador, ubicaciones de fuentes, corredores viales, mapa base |
 | [Administraciones zonales (Wikipedia)](https://es.wikipedia.org/wiki/Distrito_Metropolitano_de_Quito) | Referencia secundaria | 9 zonas vigentes; verificar con ordenanza |
 | [Open-Meteo / CAMS](https://open-meteo.com/en/docs/air-quality-api) | Modelo | Valores "ahora" (resolución ~40 km) |
 | [USFQ — inventario de tráfico 2012](https://repositorio.usfq.edu.ec/handle/23000/4178) | Referencia | Contexto de emisiones del tráfico |

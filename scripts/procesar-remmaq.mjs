@@ -1,8 +1,9 @@
 // Procesa los datos históricos OFICIALES de la REMMAQ (Secretaría de Ambiente del DMQ).
 // 1) Descargar de http://datosambiente.quito.gob.ec/ los .rar de PM2.5, PM10, NO2, O3, CO, SO2
 // 2) Extraer cada uno (p. ej. `bsdtar -xf PM2.5.rar`) y dejar los .xlsx en una carpeta
-// 3) node scripts/procesar-remmaq.mjs <carpeta-con-xlsx>
-// Salida: src/main/resources/datos/remmaq.json (resúmenes anuales, mensuales, diarios y 14 días horarios)
+// 3) node scripts/procesar-remmaq.mjs <carpeta-con-xlsx> [días-horarios=31]
+// Salida: src/main/resources/datos/remmaq.json (resúmenes anuales, mensuales, diarios y la serie horaria
+// de los últimos N días publicados, que alimenta el time-lapse del mapa)
 import { createRequire } from 'node:module'
 import { readdirSync, writeFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
@@ -10,6 +11,7 @@ import { join } from 'node:path'
 const require = createRequire(new URL('../frontend/package.json', import.meta.url))
 const XLSX = require('xlsx')
 const dir = process.argv[2]
+const DIAS_HORARIOS = Number(process.argv[3] || 31)
 if (!dir) throw new Error('Uso: node scripts/procesar-remmaq.mjs <carpeta-con-xlsx>')
 
 const H = 3600000, D = 86400000, TZ = 5 * H // Quito = UTC-5, sin horario de verano
@@ -124,10 +126,10 @@ for (const [key, cfg] of Object.entries(CONTAMINANTES)) {
   console.log(`${key}: ${Object.keys(series).length} estaciones, último dato ${new Date(last).toISOString()}`)
 }
 
-// horarios: últimos 14 días comunes a todos los contaminantes
-const start = globalLast - 14 * 24 * H + H
+// horarios: últimos DIAS_HORARIOS días comunes a todos los contaminantes
+const start = globalLast - DIAS_HORARIOS * 24 * H + H
 out.hourly.start = start
-out.hourly.n = 14 * 24
+out.hourly.n = DIAS_HORARIOS * 24
 for (const key of Object.keys(out.pollutants)) {
   const f = files.find((x) => CONTAMINANTES[key].file.test(x))
   const wb = XLSX.readFile(join(dir, f), { dense: true })

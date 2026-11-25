@@ -57,12 +57,16 @@ public class DatosDemoSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (lecturas.count() > 0) return;
-        ingesta.procesar(new SolicitudIngestaDto("externa", "demo", "Demo · laboratorio (agua)", sintetico("agua")));
-        ingesta.procesar(new SolicitudIngestaDto("interna", "demo", "Demo · sonómetros (ruido)", sintetico("ruido")));
+        // Series demo de agua y ruido: sólo la primera vez.
+        if (lecturas.count() == 0) {
+            ingesta.procesar(new SolicitudIngestaDto("externa", "demo", "Demo · laboratorio (agua)", sintetico("agua")));
+            ingesta.procesar(new SolicitudIngestaDto("interna", "demo", "Demo · sonómetros (ruido)", sintetico("ruido")));
+        }
+        // Datos reales: en CADA arranque se integra lo último publicado. Es idempotente porque la
+        // capa de integración omite como "ya existían" las lecturas repetidas.
         var oficiales = remmaq(7);
         var r0 = ingesta.procesar(new SolicitudIngestaDto("externa", "remmaq", "REMMAQ · datos oficiales validados", oficiales));
-        log.info("REMMAQ: {} lecturas oficiales integradas ({} rechazadas)", r0.accepted(), r0.rejected());
+        log.info("REMMAQ: {} lecturas oficiales nuevas, {} ya existían, {} rechazadas", r0.accepted(), r0.duplicates(), r0.rejected());
         try {
             var r = externa.sincronizarOpenMeteo(48);
             log.info("Open-Meteo: {} lecturas reales integradas", r.accepted());

@@ -42,7 +42,7 @@ export default function EstadisticasQuito({ d }) {
     return { name: s.name, oms: dd.filter((x) => x[1] > PARAMS.pm2_5.who).length, ncaa: dd.filter((x) => x[1] > PARAMS.pm2_5.max).length, total: dd.length }
   }).sort((a, b) => b.oms - a.oms)
 
-  // 3 · Ciclo diario promedio (hora local) en los 14 días publicados
+  // 3 · Ciclo diario promedio (hora local) en la serie horaria publicada más reciente
   const ciclo = useMemo(() => {
     const { start, step, series } = remmaq.hourly
     const acc = Array.from({ length: 24 }, (_, h) => ({ h, pm: [], no2: [] }))
@@ -104,7 +104,7 @@ export default function EstadisticasQuito({ d }) {
           <p className="text-xs text-muted">Naranja: días sobre la guía de salud de la OMS · Rojo: días sobre el límite legal ecuatoriano.</p>
         </Bloque>
 
-        <Bloque i={2} pregunta="¿A qué hora empeora?" titulo="Ciclo diario promedio — PM2.5 y NO₂ (µg/m³)" fuentes={['remmaq']} contexto={`Promedio por hora local de todas las estaciones en los 14 días publicados más recientes.`}>
+        <Bloque i={2} pregunta="¿A qué hora empeora?" titulo="Ciclo diario promedio — PM2.5 y NO₂ (µg/m³)" fuentes={['remmaq']} contexto={`Promedio por hora local de todas las estaciones, ${new Date(remmaq.hourly.start).toLocaleDateString('es', { day: 'numeric', month: 'long' })} – ${new Date(remmaq.meta.lastTs - 3600000).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })} (${Math.round(remmaq.hourly.n / 24)} días).`}>
           <div className="h-56">
             <ResponsiveContainer>
               <AreaChart data={ciclo} margin={{ left: -18, right: 8 }}>
